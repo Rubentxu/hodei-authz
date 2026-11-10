@@ -2,6 +2,8 @@
 
 Core traits and logic for the Hodei authorization framework.
 
+> El contrato tipado de autorización (principal verificado, outcomes y puertos) está en [AUTHORIZATION.md](AUTHORIZATION.md).
+
 ## Overview
 
 `hodei-authz-sdk-authz` provides the fundamental traits and abstractions for building authorization systems with Cedar Policy. It defines interfaces for policy storage, cache invalidation, and entity/action mapping.
