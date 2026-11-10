@@ -60,28 +60,32 @@ impl AuthorizationTarget for PathTarget {
             .uri()
             .path()
             .strip_prefix("/repositories/")
-            .ok_or(TargetError)?;
+            .ok_or(TargetError::BadRequest)?;
         let mut parts = path.split('/');
         let account = parts
             .next()
             .filter(|part| !part.is_empty())
-            .ok_or(TargetError)?;
+            .ok_or(TargetError::BadRequest)?;
         let name = parts
             .next()
             .filter(|part| !part.is_empty())
-            .ok_or(TargetError)?;
+            .ok_or(TargetError::BadRequest)?;
         if parts.next().is_some() {
-            return Err(TargetError);
+            return Err(TargetError::BadRequest);
         }
 
         let resource = format!("hrn:hodei:artifacts:eu:{account}:repository/{name}")
             .parse::<ResourceRef>()
-            .map_err(|_| TargetError)?;
+            .map_err(|_| TargetError::BadRequest)?;
         let action = match *request.method() {
             axum::http::Method::GET => ActionId::new("artifacts", "ReadRepository"),
-            _ => ActionId::new("artifacts", "WriteRepository"),
+            axum::http::Method::POST
+            | axum::http::Method::PUT
+            | axum::http::Method::PATCH
+            | axum::http::Method::DELETE => ActionId::new("artifacts", "WriteRepository"),
+            _ => return Err(TargetError::UnsupportedMethod),
         }
-        .map_err(|_| TargetError)?;
+        .map_err(|_| TargetError::Internal)?;
 
         Ok(Target::new(action, resource))
     }
@@ -281,6 +285,21 @@ async fn concurrent_requests_do_not_share_context() {
         assert_eq!(body, expected);
     }
     assert_eq!(counter.load(Ordering::SeqCst), 8);
+}
+
+#[tokio::test]
+async fn unsupported_method_is_rejected() {
+    let (app, counter) = app(ALICE_ACME);
+    let request = Request::builder()
+        .method("TRACE")
+        .uri("/repositories/acme/repo")
+        .header("authorization", "Bearer alice")
+        .body(Body::empty())
+        .unwrap();
+    let response = app.oneshot(request).await.unwrap();
+
+    assert_eq!(response.status(), StatusCode::METHOD_NOT_ALLOWED);
+    assert_eq!(counter.load(Ordering::SeqCst), 0);
 }
 
 #[tokio::test]

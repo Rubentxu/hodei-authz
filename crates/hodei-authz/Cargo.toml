@@ -1,6 +1,6 @@
 [package]
 name = "hodei-authz"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 authors = ["Ruben Dario Cabrera Garcia <rubentxu74@gmail.com>"]
 description = "Core authorization traits and types for Hodei framework with Cedar Policy"
