@@ -47,14 +47,15 @@ impl HrnCedarMapper {
     /// UID for a group in an account. The account is embedded so the same
     /// group name in two accounts cannot collide.
     pub fn group_uid(account: &AccountId, group: &GroupId) -> Result<EntityUid, CedarMappingError> {
-        let hrn = Hrn {
-            partition: "hodei".to_string(),
-            service: "iam".to_string(),
-            region: String::new(),
-            tenant_id: account.as_str().to_string(),
-            resource_type: "Group".to_string(),
-            resource_id: group.as_str().to_string(),
-        };
+        let hrn = Hrn::new(
+            "hodei",
+            "iam",
+            "",
+            account.as_str(),
+            "Group",
+            group.as_str(),
+        )
+        .map_err(|error| CedarMappingError(format!("invalid group HRN: {error}")))?;
         Self::hrn_to_uid(&hrn)
     }
 }
@@ -66,8 +67,7 @@ impl CedarEntityMapper for HrnCedarMapper {
             .as_str()
             .parse()
             .map_err(|error| CedarMappingError(format!("principal is not an HRN: {error}")))?;
-        if hrn.service != "iam" || !matches!(hrn.resource_type.as_str(), "User" | "ServiceAccount")
-        {
+        if hrn.service() != "iam" || !matches!(hrn.resource_type(), "User" | "ServiceAccount") {
             return Err(CedarMappingError(
                 "principal HRN must be an IAM User or ServiceAccount".to_string(),
             ));
@@ -95,11 +95,18 @@ impl CedarEntityMapper for HrnCedarMapper {
         resource: &ResourceRef,
     ) -> Result<HashSet<EntityUid>, CedarMappingError> {
         let hrn = resource.hrn();
-        let segments: Vec<&str> = hrn.resource_id.split('/').collect();
+        let segments: Vec<&str> = hrn.resource_path().split('/').collect();
         let mut parents = HashSet::new();
         for end in 1..segments.len() {
-            let mut parent = hrn.clone();
-            parent.resource_id = segments[..end].join("/");
+            let parent = Hrn::new(
+                hrn.partition(),
+                hrn.service(),
+                hrn.region(),
+                hrn.account(),
+                hrn.resource_type(),
+                &segments[..end].join("/"),
+            )
+            .map_err(|error| CedarMappingError(format!("invalid parent HRN: {error}")))?;
             parents.insert(Self::hrn_to_uid(&parent)?);
         }
         Ok(parents)
@@ -114,7 +121,7 @@ impl CedarEntityMapper for HrnCedarMapper {
 }
 
 fn entity_type(hrn: &Hrn) -> String {
-    format!("{}::{}", pascal(&hrn.service), pascal(&hrn.resource_type))
+    format!("{}::{}", pascal(hrn.service()), pascal(hrn.resource_type()))
 }
 
 fn pascal(segment: &str) -> String {
@@ -156,12 +163,12 @@ fn sanitize(segment: &str) -> String {
 }
 
 fn validate_hrn(hrn: &Hrn) -> Result<(), CedarMappingError> {
-    if !valid_partition(&hrn.partition)
-        || !valid_service(&hrn.service)
-        || !valid_region(&hrn.region)
-        || !valid_account(&hrn.tenant_id)
-        || !valid_resource_type(&hrn.resource_type)
-        || !valid_resource_id(&hrn.resource_id)
+    if !valid_partition(hrn.partition())
+        || !valid_service(hrn.service())
+        || !valid_region(hrn.region())
+        || !valid_account(hrn.account())
+        || !valid_resource_type(hrn.resource_type())
+        || !valid_resource_id(hrn.resource_path())
     {
         return Err(CedarMappingError(
             "HRN does not match the canonical segment grammar".to_string(),

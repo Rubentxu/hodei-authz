@@ -157,7 +157,7 @@ async fn request_carries_action_resource_attributes_and_context() {
         )]));
 
     assert_eq!(request.action(), &action);
-    assert_eq!(request.resource().hrn().tenant_id, "acme");
+    assert_eq!(request.resource().hrn().account(), "acme");
     assert_eq!(
         request.resource().attributes().get("is_public"),
         Some(&AttributeValue::Bool(true))
@@ -226,18 +226,23 @@ fn input_limits_are_enforced() {
 
 #[test]
 fn resource_ref_guards_the_legacy_hrn() {
-    let action_as_resource: Hrn = "hrn:hodei:artifacts:eu:acme:Action/read".parse().unwrap();
-    assert!(ResourceRef::new(action_as_resource).is_err());
-
-    let uppercase_service: Hrn = "hrn:hodei:Artifacts:eu:acme:repository/r".parse().unwrap();
-    assert!(ResourceRef::new(uppercase_service).is_err());
-
-    // The old 0.1 parser only accepts two resource parts.
+    // Actions are not resources; the canonical parser rejects them.
     assert!(
-        "hrn:hodei:artifacts:eu:acme:repository/releases/v2"
-            .parse::<ResourceRef>()
+        "hrn:hodei:artifacts:eu:acme:Action/read"
+            .parse::<Hrn>()
             .is_err()
     );
+
+    // The canonical parser normalizes the service to lowercase.
+    let uppercase_service: Hrn = "hrn:hodei:Artifacts:eu:acme:repository/r".parse().unwrap();
+    assert_eq!(uppercase_service.service(), "artifacts");
+    assert!(ResourceRef::new(uppercase_service).is_ok());
+
+    // Nested resource paths are part of the 0.2 contract.
+    let nested: ResourceRef = "hrn:hodei:artifacts:eu:acme:repository/releases/v2"
+        .parse()
+        .expect("nested resource");
+    assert_eq!(nested.hrn().resource_path(), "releases/v2");
 }
 
 #[test]

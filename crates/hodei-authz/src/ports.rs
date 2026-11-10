@@ -56,7 +56,7 @@ pub async fn verify_principal(
             .as_str()
             .parse()
             .map_err(|_| AuthenticationError::InvalidCredentials)?;
-        if hrn.tenant_id != claims.account().as_str() {
+        if hrn.account() != claims.account().as_str() {
             return Err(AuthenticationError::InvalidCredentials);
         }
     }
