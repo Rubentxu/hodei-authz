@@ -163,6 +163,22 @@ fn sanitize(segment: &str) -> String {
 }
 
 fn validate_hrn(hrn: &Hrn) -> Result<(), CedarMappingError> {
+    // Cedar type names are case-sensitive, but the legacy PascalCase
+    // conversion is not injective for resource types. Do not silently fold an
+    // upper-case variant into the lower-case type; reject it fail-closed unless
+    // it is one of the known canonical principal/IAM names.
+    let resource_type = hrn.resource_type();
+    let has_upper = resource_type.chars().any(|c| c.is_ascii_uppercase());
+    if has_upper
+        && !matches!(
+            resource_type,
+            "User" | "Group" | "ServiceAccount" | "Policy"
+        )
+    {
+        return Err(CedarMappingError(
+            "ambiguous upper-case resource type; use the canonical lower-case spelling".to_string(),
+        ));
+    }
     if !valid_partition(hrn.partition())
         || !valid_service(hrn.service())
         || !valid_region(hrn.region())

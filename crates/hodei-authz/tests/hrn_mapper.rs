@@ -405,3 +405,11 @@ fn package_dash_and_underscore_are_distinct_cedar_types() {
     assert!(dash_uid.to_string().contains("Package_x2Dversion"));
     assert!(underscore_uid.to_string().contains("Package_x5Fversion"));
 }
+
+#[test]
+fn upper_case_resource_type_is_rejected_instead_of_colliding() {
+    let lower = Hrn::new("hodei", "artifacts", "eu", "acme", "repository", "r").unwrap();
+    let upper = Hrn::new("hodei", "artifacts", "eu", "acme", "Repository", "r").unwrap();
+    assert!(HrnCedarMapper::hrn_to_uid(&lower).is_ok());
+    assert!(HrnCedarMapper::hrn_to_uid(&upper).is_err());
+}
