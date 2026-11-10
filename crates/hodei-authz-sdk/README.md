@@ -6,11 +6,20 @@ Cedar Policy-based authorization framework for Rust applications, inspired by AW
 
 Hodei is a complete authorization framework that provides:
 
+> **Security status (2026-11-10).** The published `hodei-authz-axum 0.1.0`
+> forwards protected requests without authorizing them. This source tree fixes
+> it as `0.1.1`, which is not published yet. While `0.1.1` is unpublished, a
+> fresh install of SDK `0.1.0` still resolves the vulnerable axum `0.1.0`;
+> once axum `0.1.1` is published, the SDK's `^0.1.0` requirement admits it. A
+> new SDK release is only needed to publish the source changes in this branch,
+> not to receive the axum fix.
+
+
 - **Cedar Policy Engine**: Policy-based access control using Amazon's Cedar
 - **Multi-Tenancy**: Built-in tenant isolation with HRN (Hodei Resource Name)
 - **Derive Macros**: Automatic code generation for entities and actions
 - **Database Adapters**: PostgreSQL and Redis support out of the box
-- **Web Integration**: Axum middleware and extractors
+- **Web Integration**: Axum middleware (fail-closed; extractors not enabled yet)
 - **Type-Safe**: Leverages Rust's type system for compile-time safety
 
 ## Quick Start
@@ -123,8 +132,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 - `default` - Core functionality (kernel + core + derive)
 - `postgres` - PostgreSQL adapter
 - `redis` - Redis cache invalidation
-- `axum` - Axum web framework integration
-- `full` - All features enabled
+- `axum` - Axum fail-closed middleware (extractors not enabled yet)
+- `full` - All features enabled (includes the `axum` caveat)
 
 ```toml
 # Minimal installation
@@ -181,23 +190,10 @@ let can_read = check_authorization(
 
 ### With Axum
 
-```rust
-use hodei_axum::AuthenticatedUser;
-use axum::{Router, routing::get, Json};
-
-async fn get_document(
-    AuthenticatedUser(user): AuthenticatedUser<User>,
-    Path(id): Path<String>,
-) -> Result<Json<Document>, StatusCode> {
-    // Authorization is handled by middleware
-    let document = fetch_document(&id).await?;
-    Ok(Json(document))
-}
-
-let app = Router::new()
-    .route("/documents/:id", get(get_document))
-    .layer(middleware::from_fn(authorize_middleware));
-```
+> **Not available in this release.** `hodei-authz-axum` is fail-closed: its
+> middleware denies every protected request and its extractors are disabled
+> until a verified authorizer is wired. See the
+> [axum crate README](https://github.com/Rubentxu/hodei-authz/blob/main/crates/hodei-authz-axum/README.md).
 
 ## Documentation
 

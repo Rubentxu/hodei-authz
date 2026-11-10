@@ -1,179 +1,94 @@
-# hodei-authz-sdk-authz-axum
+# hodei-authz-axum
 
-Axum web framework integration for the Hodei authorization framework.
+Axum integration for the Hodei authorization framework.
 
-## Overview
+## Security status: fail-closed
 
-`hodei-authz-sdk-authz-axum` provides middleware and extractors for integrating Hodei authorization into Axum web applications. It includes authentication extractors and authorization middleware.
+> **Security correction.** `authorize_middleware` used to call
+> `next.run(req)` unconditionally, so every route behind it was effectively
+> public. Version `0.1.0` is affected. This source tree fixes it as `0.1.1`:
+> the middleware denies every request that crosses the layer with
+> `403 Forbidden` and never executes the handler, because the crate does not
+> yet own a verified authorizer.
+>
+> The fix is **not published yet**. Until `0.1.1` is on crates.io, consume the
+> Git revision or a local patch; do not install `0.1.0`.
 
-## Features
-
-- **AuthenticatedUser Extractor**: Extract authenticated users from requests
-- **Authorization Middleware**: Protect routes with Cedar policies
-- **Error Handling**: HTTP-friendly error responses
-- **Type-Safe**: Leverages Rust's type system for safety
+The middleware is intentionally fail-closed until an authenticated authorizer
+adapter is wired. Do **not** remove the layer to make a `403` disappear, and do
+not treat the layer as a no-op.
 
 ## Installation
 
+Once `0.1.1` is published (see the status above), install:
+
 ```toml
 [dependencies]
-hodei-authz-sdk-authz-axum = "0.1"
+hodei-authz-axum = "0.1.1"
 axum = "0.8"
 ```
 
 ## Usage
 
-### AuthenticatedUser Extractor
-
 ```rust
-use hodei_axum::AuthenticatedUser;
-use hodei_derive::HodeiEntity;
-use axum::{Json, response::IntoResponse};
-
-#[derive(HodeiEntity, Serialize, Deserialize)]
-#[hodei-authz-sdk(entity_type = "MyApp::User")]
-struct User {
-    id: Hrn,
-    email: String,
-}
-
-async fn protected_handler(
-    AuthenticatedUser(user): AuthenticatedUser<User>,
-) -> impl IntoResponse {
-    Json(user)
-}
-```
-
-### Authorization Middleware
-
-```rust
-use hodei_axum::authorize_middleware;
-use axum::{Router, routing::get, middleware};
+use axum::{Router, middleware, routing::get};
+use hodei_authz_axum::authorize_middleware;
 
 let app = Router::new()
     .route("/protected", get(protected_handler))
     .layer(middleware::from_fn(authorize_middleware));
+// Every request to /protected now receives 403 and protected_handler is not called.
 ```
 
-### Complete Example
+The layer only covers routes registered before it in the same `Router`. Attach
+it to a dedicated subrouter, or add it after every route, so a route cannot be
+added later without the layer:
 
 ```rust
-use axum::{
-    Router,
-    routing::{get, post},
-    middleware,
-    Json,
-};
-use hodei_axum::{AuthenticatedUser, authorize_middleware};
-use hodei_derive::HodeiEntity;
-use serde::{Serialize, Deserialize};
+let protected = Router::new()
+    .route("/protected", get(protected_handler))
+    .layer(middleware::from_fn(authorize_middleware));
 
-#[derive(HodeiEntity, Serialize, Deserialize, Clone)]
-#[hodei-authz-sdk(entity_type = "MyApp::User")]
-struct User {
-    id: Hrn,
-    email: String,
-    role: String,
-}
-
-async fn get_profile(
-    AuthenticatedUser(user): AuthenticatedUser<User>,
-) -> Json<User> {
-    Json(user)
-}
-
-async fn update_profile(
-    AuthenticatedUser(user): AuthenticatedUser<User>,
-    Json(payload): Json<UpdateProfilePayload>,
-) -> impl IntoResponse {
-    // Update logic
-    Json(user)
-}
-
-#[tokio::main]
-async fn main() {
-    let app = Router::new()
-        .route("/profile", get(get_profile))
-        .route("/profile", post(update_profile))
-        .layer(middleware::from_fn(authorize_middleware));
-    
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000")
-        .await
-        .unwrap();
-    
-    axum::serve(listener, app).await.unwrap();
-}
+let app = Router::new()
+    .route("/health", get(health))
+    .merge(protected);
 ```
 
-### Error Handling
+## Why deny everything?
 
-```rust
-use hodei_axum::AuthError;
-use axum::response::{IntoResponse, Response};
-use axum::http::StatusCode;
+A middleware that cannot evaluate a policy has no safe default. The alternatives
+were worse:
 
-// AuthError automatically converts to HTTP responses
-// - AuthError::MissingToken -> 401 Unauthorized
-// - AuthError::InvalidToken -> 401 Unauthorized  
-// - AuthError::UserNotFound -> 401 Unauthorized
+- forwarding the request (the previous behavior, a real authorization bypass);
+- accepting a client-supplied tenant or role header as identity;
+- returning `200` with an empty body while the handler never ran.
+
+The denial is generic: `403 Forbidden` with the body `forbidden`. The
+configuration error is logged once per process, not once per request, so
+unauthenticated traffic cannot amplify logs or leak request paths.
+
+## Compatibility
+
+- `middleware::AuthorizationState` is retained as a deprecated, unused
+  placeholder so `0.1.x` consumers keep compiling. It will be removed when the
+  authorizing middleware replaces the fail-closed layer.
+- The extractors are not part of this release. Do not build an identity from
+  `Authorization` headers, `x-tenant-id`, or any other client-supplied value.
+- The stateful adapter that maps an authenticated principal and a scoped
+  resource to a Cedar decision belongs to the follow-up authorization work.
+
+## Tests
+
+```bash
+cargo test -p hodei-authz-axum
 ```
 
-## Custom Authentication
+`tests/middleware_fail_closed.rs` proves, in-process:
 
-The `AuthenticatedUser` extractor is a template. You'll need to implement your own authentication logic:
-
-```rust
-use axum::{async_trait, extract::FromRequestParts};
-use axum::http::request::Parts;
-
-#[async_trait]
-impl<S, T> FromRequestParts<S> for AuthenticatedUser<T>
-where
-    T: HodeiEntity + DeserializeOwned + Send + Sync,
-    S: Send + Sync,
-{
-    type Rejection = AuthError;
-    
-    async fn from_request_parts(
-        parts: &mut Parts,
-        _state: &S,
-    ) -> Result<Self, Self::Rejection> {
-        // 1. Extract token from Authorization header
-        // 2. Validate JWT token
-        // 3. Extract user ID from claims
-        // 4. Fetch user from database
-        // 5. Return AuthenticatedUser(user)
-        
-        // Your implementation here
-    }
-}
-```
-
-## Middleware Customization
-
-The authorization middleware can be extended:
-
-```rust
-use axum::{
-    body::Body,
-    http::{Request, StatusCode},
-    middleware::Next,
-    response::Response,
-};
-
-pub async fn custom_authorize_middleware(
-    req: Request<Body>,
-    next: Next,
-) -> Result<Response, StatusCode> {
-    // 1. Extract user from request
-    // 2. Extract action and resource from request path/method
-    // 3. Check authorization with Cedar
-    // 4. If authorized, call next
-    // 5. If not, return 403 Forbidden
-    
-    Ok(next.run(req).await)
-}
-```
+1. a protected GET is denied with `403` and the handler is not reached;
+2. a denied POST does not reach the handler;
+3. forged `authorization` / `x-tenant-id` headers do not change the denial;
+4. a health route outside the layer still returns `200`.
 
 ## License
 

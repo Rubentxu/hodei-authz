@@ -1,5 +1,13 @@
 [workspace]
-members = ["crates/hodei-authz-sdk"]
+members = [
+    "crates/hodei-hrn",
+    "crates/hodei-derive",
+    "crates/hodei-authz",
+    "crates/hodei-authz-postgres",
+    "crates/hodei-authz-redis",
+    "crates/hodei-authz-axum",
+    "crates/hodei-authz-sdk",
+]
 resolver = "2"
 
 [workspace.package]
@@ -7,14 +15,16 @@ version = "0.1.0"
 edition = "2024"
 authors = ["Ruben Dario Cabrera Garcia <rubentxu74@gmail.com>"]
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/Rubentxu/hodei-policies"
+repository = "https://github.com/Rubentxu/hodei-authz"
+
 # Internal crates
+[workspace.dependencies]
 hodei-hrn = { version = "0.1.0", path = "crates/hodei-hrn" }
 hodei-authz = { version = "0.1.0", path = "crates/hodei-authz" }
 hodei-derive = { version = "0.1.0", path = "crates/hodei-derive" }
 hodei-authz-postgres = { version = "0.1.0", path = "crates/hodei-authz-postgres" }
 hodei-authz-redis = { version = "0.1.0", path = "crates/hodei-authz-redis" }
-hodei-authz-axum = { version = "0.1.0", path = "crates/hodei-authz-axum" }
+hodei-authz-axum = { version = "0.1.1", path = "crates/hodei-authz-axum" }
 hodei-authz-sdk = { version = "0.1.0", path = "crates/hodei-authz-sdk" }
 
 # External dependencies (using existing versions)
@@ -42,6 +52,7 @@ quote = "1.0.41"
 proc-macro2 = "1.0.101"
 inventory = "0.3.21"
 chrono = { version = "0.4", features = ["serde"] }
+tower = { version = "0.5", features = ["util"] }
 
 # Legacy paths (will be removed)
 hodei-domain = { path = "crates/hodei_domain" }

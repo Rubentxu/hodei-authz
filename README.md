@@ -2,6 +2,14 @@
 
 Motor de autorización avanzado construido en Rust con Cedar Policy, diseñado para aplicaciones multi-tenant seguras y escalables.
 
+> **Aviso de seguridad (2026-11-10).** El middleware Axum de este repositorio es
+> fail-closed: deniega con `403` hasta que exista un authorizer verificado
+> (`hodei-authz-axum 0.1.1`). La versión publicada `0.1.0` no protege. Los
+> ejemplos con `Authorization: Bearer`, la tabla de usuarios y los scripts de
+> API describen el objetivo o código legacy, no un flujo de autorización ya
+> cableado.
+
+
 ## 🎯 Características Principales
 
 - **Schema-as-Code**: El esquema Cedar se genera automáticamente desde el código Rust
@@ -84,7 +92,7 @@ make test
 
 - ✅ **REQ-HRN-04**: Hidratación de HRN en backend
 - ✅ **REQ-PM-01**: Aislamiento multi-tenant estricto
-- ✅ **REQ-SVC-05**: Flujo de autorización completo
+- ⏳ **REQ-SVC-05**: Flujo de autorización (middleware Axum fail-closed; pendiente de authorizer verificado)
 - ✅ **REQ-API-01**: Gestión dinámica de políticas
 - ✅ **REQ-DM-01**: Recursos virtuales en creación
 

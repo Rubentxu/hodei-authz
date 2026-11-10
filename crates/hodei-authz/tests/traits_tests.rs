@@ -59,7 +59,7 @@ impl PolicyStore for MockPolicyStore {
     }
     
     async fn load_all_policies(&self) -> Result<PolicySet, PolicyStoreError> {
-        PolicySet::new().map_err(|e| PolicyStoreError::Internal(e.to_string()))
+        Ok(PolicySet::new())
     }
 }
 

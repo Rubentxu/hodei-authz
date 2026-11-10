@@ -5,16 +5,16 @@ edition = "2024"
 authors = ["Ruben Dario Cabrera Garcia <rubentxu74@gmail.com>"]
 description = "Core authorization traits and types for Hodei framework with Cedar Policy"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/Rubentxu/hodei-policies"
+repository = "https://github.com/Rubentxu/hodei-authz"
 documentation = "https://docs.rs/hodei-authz"
-homepage = "https://github.com/Rubentxu/hodei-policies"
+homepage = "https://github.com/Rubentxu/hodei-authz"
 keywords = ["authorization", "cedar", "policy", "iam"]
 categories = ["authentication", "web-programming"]
 readme = "README.md"
 
 [dependencies]
-hodei-hrn = "0.1.0"
-hodei-derive = "0.1.0"
+hodei-hrn = { workspace = true }
+hodei-derive = { workspace = true }
 cedar-policy = { workspace = true }
 inventory = { workspace = true }
 async-trait = { workspace = true }
