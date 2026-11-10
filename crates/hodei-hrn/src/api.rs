@@ -65,12 +65,24 @@ impl HrnBuilder {
 
     pub fn build(self) -> Result<Hrn, HrnError> {
         Ok(Hrn {
-            partition: self.partition.ok_or_else(|| HrnError::MissingPart("partition".into()))?,
-            service: self.service.ok_or_else(|| HrnError::MissingPart("service".into()))?,
-            region: self.region.ok_or_else(|| HrnError::MissingPart("region".into()))?,
-            tenant_id: self.tenant_id.ok_or_else(|| HrnError::MissingPart("tenant_id".into()))?,
-            resource_type: self.resource_type.ok_or_else(|| HrnError::MissingPart("resource_type".into()))?,
-            resource_id: self.resource_id.ok_or_else(|| HrnError::MissingPart("resource_id".into()))?,
+            partition: self
+                .partition
+                .ok_or_else(|| HrnError::MissingPart("partition".into()))?,
+            service: self
+                .service
+                .ok_or_else(|| HrnError::MissingPart("service".into()))?,
+            region: self
+                .region
+                .ok_or_else(|| HrnError::MissingPart("region".into()))?,
+            tenant_id: self
+                .tenant_id
+                .ok_or_else(|| HrnError::MissingPart("tenant_id".into()))?,
+            resource_type: self
+                .resource_type
+                .ok_or_else(|| HrnError::MissingPart("resource_type".into()))?,
+            resource_id: self
+                .resource_id
+                .ok_or_else(|| HrnError::MissingPart("resource_id".into()))?,
         })
     }
 }
@@ -86,7 +98,12 @@ impl fmt::Display for Hrn {
         write!(
             f,
             "hrn:{}:{}:{}:{}:{}/{}",
-            self.partition, self.service, self.region, self.tenant_id, self.resource_type, self.resource_id
+            self.partition,
+            self.service,
+            self.region,
+            self.tenant_id,
+            self.resource_type,
+            self.resource_id
         )
     }
 }
@@ -94,11 +111,17 @@ impl fmt::Display for Hrn {
 impl FromStr for Hrn {
     type Err = HrnError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if !s.starts_with("hrn:") { return Err(HrnError::InvalidPrefix); }
+        if !s.starts_with("hrn:") {
+            return Err(HrnError::InvalidPrefix);
+        }
         let parts: Vec<&str> = s[4..].split(':').collect();
-        if parts.len() != 5 { return Err(HrnError::InvalidFormat); }
+        if parts.len() != 5 {
+            return Err(HrnError::InvalidFormat);
+        }
         let resource_parts: Vec<&str> = parts[4].split('/').collect();
-        if resource_parts.len() != 2 { return Err(HrnError::InvalidResourcePart); }
+        if resource_parts.len() != 2 {
+            return Err(HrnError::InvalidResourcePart);
+        }
         Ok(Hrn {
             partition: parts[0].to_string(),
             service: parts[1].to_string(),
@@ -127,7 +150,9 @@ impl<'q> sqlx::Encode<'q, sqlx::Postgres> for Hrn {
 
 #[cfg(feature = "sqlx")]
 impl<'r> sqlx::Decode<'r, sqlx::Postgres> for Hrn {
-    fn decode(value: sqlx::postgres::PgValueRef<'r>) -> Result<Self, Box<dyn std::error::Error + 'static + Send + Sync>> {
+    fn decode(
+        value: sqlx::postgres::PgValueRef<'r>,
+    ) -> Result<Self, Box<dyn std::error::Error + 'static + Send + Sync>> {
         let str_value = <String as sqlx::Decode<sqlx::Postgres>>::decode(value)?;
         Ok(str_value.parse()?)
     }

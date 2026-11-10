@@ -33,19 +33,19 @@ pub enum CacheError {
 pub trait PolicyStore: Send + Sync {
     /// Create a new policy and return its ID
     async fn create_policy(&self, content: String) -> Result<String, PolicyStoreError>;
-    
+
     /// Get a policy by ID
     async fn get_policy(&self, id: &str) -> Result<Option<String>, PolicyStoreError>;
-    
+
     /// List all policies as (id, content) tuples
     async fn list_policies(&self) -> Result<Vec<(String, String)>, PolicyStoreError>;
-    
+
     /// Update an existing policy
     async fn update_policy(&self, id: &str, content: String) -> Result<(), PolicyStoreError>;
-    
+
     /// Delete a policy by ID
     async fn delete_policy(&self, id: &str) -> Result<(), PolicyStoreError>;
-    
+
     /// Load all policies as a PolicySet
     async fn load_all_policies(&self) -> Result<PolicySet, PolicyStoreError>;
 }
@@ -55,7 +55,7 @@ pub trait PolicyStore: Send + Sync {
 pub trait CacheInvalidation: Send + Sync {
     /// Publish a cache invalidation event
     async fn invalidate_policies(&self) -> Result<(), CacheError>;
-    
+
     /// Subscribe to cache invalidation events with a callback
     async fn subscribe_to_invalidations<F>(&self, callback: F) -> Result<(), CacheError>
     where
@@ -88,18 +88,21 @@ mod tests {
             self.policies.lock().unwrap().insert(id.clone(), content);
             Ok(id)
         }
-        
+
         async fn get_policy(&self, id: &str) -> Result<Option<String>, PolicyStoreError> {
             Ok(self.policies.lock().unwrap().get(id).cloned())
         }
-        
+
         async fn list_policies(&self) -> Result<Vec<(String, String)>, PolicyStoreError> {
-            Ok(self.policies.lock().unwrap()
+            Ok(self
+                .policies
+                .lock()
+                .unwrap()
                 .iter()
                 .map(|(k, v)| (k.clone(), v.clone()))
                 .collect())
         }
-        
+
         async fn update_policy(&self, id: &str, content: String) -> Result<(), PolicyStoreError> {
             let mut policies = self.policies.lock().unwrap();
             if policies.contains_key(id) {
@@ -109,7 +112,7 @@ mod tests {
                 Err(PolicyStoreError::NotFound(id.to_string()))
             }
         }
-        
+
         async fn delete_policy(&self, id: &str) -> Result<(), PolicyStoreError> {
             let mut policies = self.policies.lock().unwrap();
             if policies.remove(id).is_some() {
@@ -118,7 +121,7 @@ mod tests {
                 Err(PolicyStoreError::NotFound(id.to_string()))
             }
         }
-        
+
         async fn load_all_policies(&self) -> Result<PolicySet, PolicyStoreError> {
             Ok(PolicySet::new())
         }
@@ -127,14 +130,20 @@ mod tests {
     #[tokio::test]
     async fn test_mock_policy_store_create() {
         let store = MockPolicyStore::new();
-        let id = store.create_policy("test policy".to_string()).await.unwrap();
+        let id = store
+            .create_policy("test policy".to_string())
+            .await
+            .unwrap();
         assert!(!id.is_empty());
     }
 
     #[tokio::test]
     async fn test_mock_policy_store_get() {
         let store = MockPolicyStore::new();
-        let id = store.create_policy("test policy".to_string()).await.unwrap();
+        let id = store
+            .create_policy("test policy".to_string())
+            .await
+            .unwrap();
         let policy = store.get_policy(&id).await.unwrap();
         assert_eq!(policy, Some("test policy".to_string()));
     }
@@ -143,7 +152,10 @@ mod tests {
     async fn test_mock_policy_store_update() {
         let store = MockPolicyStore::new();
         let id = store.create_policy("original".to_string()).await.unwrap();
-        store.update_policy(&id, "updated".to_string()).await.unwrap();
+        store
+            .update_policy(&id, "updated".to_string())
+            .await
+            .unwrap();
         let policy = store.get_policy(&id).await.unwrap();
         assert_eq!(policy, Some("updated".to_string()));
     }

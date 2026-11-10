@@ -1,3 +1,3 @@
 pub mod api;
 
-pub use api::{HrnError, Hrn, HrnBuilder};
+pub use api::{Hrn, HrnBuilder, HrnError};
