@@ -5,6 +5,7 @@
 #![allow(clippy::double_must_use)]
 
 pub mod api;
+pub mod cedar;
 pub mod decision;
 pub mod model;
 pub mod ports;
@@ -17,6 +18,7 @@ pub use inventory;
 pub use api::{
     ActionSchemaFragment, EntitySchemaFragment, RuntimeHodeiActionMapper, RuntimeHodeiEntityMapper,
 };
+pub use cedar::{CedarAuthorizer, CedarEntityMapper, CedarMappingError, CedarSetupError};
 pub use decision::{AuthorizationOutcome, DenyReason, IndeterminateReason};
 pub use model::{
     AccountId, ActionId, AttributeValue, Attributes, AuthorizationRequest, Credentials, GroupId,

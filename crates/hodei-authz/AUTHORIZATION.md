@@ -15,7 +15,7 @@ Núcleo funcional de `hodei-authz`: separa identidad verificada de datos aportad
 
 No existe constructor público de `VerifiedPrincipal`, `From<PrincipalClaims>`, `From<HeaderMap>` ni deserialización de `VerifiedPrincipal`. Los doctests `compile_fail` E0451/E0308/E0277 de `model.rs` fijan la privacidad de campos, el rechazo de claims como contexto y la ausencia de serde.
 
-**El authenticator es parte de la TCB.** Un adaptador que ignore las credenciales y copie `x-tenant-id` anula la garantía; el trait hace explícita esa decisión, no la valida criptográficamente. Las implementaciones de test (`MockAuthenticator`) solo existen para probar el contrato.
+**El authenticator y el `CedarEntityMapper` son parte de la TCB.** Un adaptador que ignore las credenciales y copie `x-tenant-id` anula la garantía; el trait hace explícita esa decisión, no la valida criptográficamente. El mapper debe codificar el tenant en los UIDs. Las implementaciones de test (`MockAuthenticator`, `TestMapper`) solo existen para probar el contrato.
 
 ## Uso
 
@@ -71,7 +71,7 @@ pub enum AuthorizationOutcome {
 ## Puertos
 
 - `PrincipalAuthenticator`: adapter que valida credenciales y devuelve `PrincipalClaims`. `verify_principal` es el único constructor de `VerifiedPrincipal`.
-- `Authorizer`: función pura `decide(&AuthorizationRequest) -> AuthorizationOutcome`. El request lleva principal, acción, recurso, atributos de ambos y contexto; el adapter mantiene el snapshot de políticas. No hace IO: cargar el recurso desde persistencia es responsabilidad del caso de uso.
+- `Authorizer`: función pura `decide(&AuthorizationRequest) -> AuthorizationOutcome`. `CedarAuthorizer` (ver [CEDAR.md](CEDAR.md)) es la implementación de referencia; inyecta los atributos del request en entidades Cedar por petición. El request lleva principal, acción, recurso, atributos de ambos y contexto; el adapter mantiene el snapshot de políticas. No hace IO: cargar el recurso desde persistencia es responsabilidad del caso de uso.
 - El payload cubre las políticas del MVP que dependen de identidad, cuenta, `is_public` y `owner_id`. Jerarquías de padres, grupos anidados o entidades adicionales requieren el snapshot de HSP-7; no se finge que el request sea autosuficiente para cualquier política Cedar.
 - El nombre `Authorizer` colisiona con `cedar_policy::Authorizer`; si se importan ambos, usar `hodei_authz::Authorizer as HodeiAuthorizer`.
 
