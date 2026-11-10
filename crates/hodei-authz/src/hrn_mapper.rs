@@ -126,26 +126,31 @@ fn pascal(segment: &str) -> String {
     }
 }
 
+/// Encode a source segment into a Cedar type component **injectively**.
+///
+/// Alphanumerics are preserved; `_` and every other byte are encoded as
+/// `_xHH`. This keeps `package-version` (`_x2D`) distinct from
+/// `package_version` (`_x5F`), which a plain replacement would collapse.
 fn sanitize(segment: &str) -> String {
-    let mut sanitized: String = segment
-        .chars()
-        .map(|character| {
-            if character.is_ascii_alphanumeric() || character == '_' {
-                character
-            } else {
-                '_'
-            }
-        })
-        .collect();
+    let mut sanitized = String::new();
+    for byte in segment.bytes() {
+        if byte.is_ascii_alphanumeric() {
+            sanitized.push(byte as char);
+        } else {
+            sanitized.push_str(&format!("_x{byte:02X}"));
+        }
+    }
     if sanitized.is_empty() {
-        sanitized.push('_');
+        sanitized.push_str("_x00");
     }
     if !sanitized
         .chars()
         .next()
         .is_some_and(|character| character.is_ascii_alphabetic())
     {
-        sanitized.insert(0, '_');
+        sanitized.insert_str(0, "_x");
+        let first = sanitized.chars().nth(2).unwrap_or('0');
+        sanitized.replace_range(2..3, &format!("{:02X}", first as u8));
     }
     sanitized
 }
@@ -176,13 +181,10 @@ fn valid_partition(value: &str) -> bool {
 fn valid_service(value: &str) -> bool {
     !value.is_empty()
         && value.len() <= 64
-        && value
-            .chars()
-            .next()
-            .is_some_and(|character| character.is_ascii_lowercase())
         && value.chars().all(|character| {
             character.is_ascii_lowercase() || character.is_ascii_digit() || character == '-'
         })
+        && !value.starts_with('-')
         && !value.ends_with('-')
 }
 
@@ -217,7 +219,7 @@ fn valid_resource_type(value: &str) -> bool {
             .is_some_and(|character| character.is_ascii_alphabetic())
         && value
             .chars()
-            .all(|character| character.is_ascii_alphanumeric())
+            .all(|character| character.is_ascii_alphanumeric() || matches!(character, '-' | '_'))
 }
 
 fn valid_resource_id(value: &str) -> bool {
