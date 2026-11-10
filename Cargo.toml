@@ -24,7 +24,7 @@ hodei-authz = { version = "0.1.0", path = "crates/hodei-authz" }
 hodei-derive = { version = "0.1.0", path = "crates/hodei-derive" }
 hodei-authz-postgres = { version = "0.1.0", path = "crates/hodei-authz-postgres" }
 hodei-authz-redis = { version = "0.1.0", path = "crates/hodei-authz-redis" }
-hodei-authz-axum = { version = "0.1.1", path = "crates/hodei-authz-axum" }
+hodei-authz-axum = { version = "0.2.0", path = "crates/hodei-authz-axum" }
 hodei-authz-sdk = { version = "0.1.0", path = "crates/hodei-authz-sdk" }
 
 # External dependencies (using existing versions)

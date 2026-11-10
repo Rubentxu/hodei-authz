@@ -4,6 +4,7 @@
 .PHONY: help prepare-publish restore-workspace publish-all dry-run
 
 VERSION := 0.1.0
+AXUM_VERSION := 0.2.0
 CRATES := hodei-hrn hodei-derive hodei-authz hodei-authz-postgres hodei-authz-redis hodei-authz-axum hodei-authz-sdk
 SCRIPTS_DIR := scripts
 
@@ -29,7 +30,7 @@ prepare-publish:
 	@sed -i 's/hodei-derive = { workspace = true }/hodei-derive = "$(VERSION)"/g' crates/hodei-authz-sdk/Cargo.toml
 	@sed -i 's/hodei-authz-postgres = { workspace = true, optional = true }/hodei-authz-postgres = { version = "$(VERSION)", optional = true }/g' crates/hodei-authz-sdk/Cargo.toml
 	@sed -i 's/hodei-authz-redis = { workspace = true, optional = true }/hodei-authz-redis = { version = "$(VERSION)", optional = true }/g' crates/hodei-authz-sdk/Cargo.toml
-	@sed -i 's/hodei-authz-axum = { workspace = true, optional = true }/hodei-authz-axum = { version = "$(VERSION)", optional = true }/g' crates/hodei-authz-sdk/Cargo.toml
+	@sed -i 's/hodei-authz-axum = { workspace = true, optional = true }/hodei-authz-axum = { version = "$(AXUM_VERSION)", optional = true }/g' crates/hodei-authz-sdk/Cargo.toml
 	@echo "✅ Crates preparados (backups en *.backup)"
 
 restore-workspace:

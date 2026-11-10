@@ -1,6 +1,6 @@
 [package]
 name = "hodei-authz-axum"
-version = "0.1.1"
+version = "0.2.0"
 edition = "2024"
 authors = ["Ruben Dario Cabrera Garcia <rubentxu74@gmail.com>"]
 description = "Axum web framework integration for Hodei authorization"
@@ -14,8 +14,12 @@ readme = "README.md"
 
 [dependencies]
 axum = { workspace = true }
+hodei-authz = { workspace = true }
+thiserror = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]
+async-trait = { workspace = true }
+cedar-policy = { workspace = true }
 tokio = { workspace = true }
 tower = { workspace = true }

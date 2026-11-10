@@ -2,55 +2,109 @@
 //!
 //! # Security
 //!
-//! [`authorize_middleware`] is **fail-closed**. This crate does not yet own a
-//! verified authorizer, so the middleware refuses to forward protected
-//! requests: every request that crosses the layer is answered with
-//! `403 Forbidden` and the handler is never executed. The previous
-//! implementation called `next.run(req)` unconditionally, which made the layer
-//! a no-op that looked like protection.
+//! [`authorize_middleware`] is the legacy fail-closed layer: it refuses to
+//! forward protected requests because it has no verified authorizer. It is
+//! retained for compatibility with existing routers.
 //!
-//! The layer only covers routes registered before it in the same `Router`.
-//! Attach it to a dedicated subrouter, or add it after every route, so a route
-//! cannot be added later without the layer. Replace the layer with an
-//! authorizing middleware once an authenticated authorizer adapter exists; do
-//! not remove it to make a `403` disappear.
+//! [`authorize_with_state`] is the authorizing middleware: it extracts a
+//! bearer credential, verifies it through a [`PrincipalAuthenticator`], builds
+//! an [`AuthorizationRequest`] with a route-specific target, and only calls the
+//! handler when the [`Authorizer`] returns `Permit`. Missing/invalid
+//! credentials map to `401`, deny/indeterminate to `403`; the handler is never
+//! executed in those cases.
+//!
+//! The middleware does **not** replace use-case authorization when the
+//! decision depends on resource state. It propagates the verified context as a
+//! request extension; it never reads `x-tenant-id` or any client-supplied
+//! tenant as identity.
 
-use std::sync::Once;
+use std::sync::{Arc, Once};
 
 use axum::{
     body::Body,
+    extract::State,
     http::{Request, StatusCode},
     middleware::Next,
     response::{IntoResponse, Response},
 };
+use hodei_authz::Authorizer;
+use hodei_authz::{
+    ActionId, AuthorizationRequest, Credentials, PrincipalAuthenticator, ResourceRef,
+    VerifiedContext, verify_principal,
+};
+use thiserror::Error;
 
 static FAIL_CLOSED_LOGGED: Once = Once::new();
 
 /// Unused placeholder retained for API compatibility.
 #[deprecated(
-    note = "unused placeholder; it will be removed when the authorizing middleware replaces the fail-closed layer"
+    note = "unused placeholder; use the new `AuthorizeState` for the authorizing middleware"
 )]
 pub struct AuthorizationState {}
 
-/// Deny every protected request until a verified authorizer is wired.
+/// Immutable state needed by [`authorize_with_state`].
+#[derive(Clone)]
+pub struct AuthorizeState {
+    authenticator: Arc<dyn PrincipalAuthenticator>,
+    authorizer: Arc<dyn Authorizer>,
+    target: Arc<dyn AuthorizationTarget>,
+    allow_cross_account: bool,
+}
+
+impl AuthorizeState {
+    pub fn new(
+        authenticator: Arc<dyn PrincipalAuthenticator>,
+        authorizer: Arc<dyn Authorizer>,
+        target: Arc<dyn AuthorizationTarget>,
+    ) -> Self {
+        Self {
+            authenticator,
+            authorizer,
+            target,
+            allow_cross_account: false,
+        }
+    }
+
+    /// Opt in to cross-account requests. The default is deny: the verified
+    /// principal and the resource must share an account. Use this only for
+    /// explicit administrative flows.
+    pub fn allow_cross_account(mut self, allow: bool) -> Self {
+        self.allow_cross_account = allow;
+        self
+    }
+}
+
+/// The action and resource of a request.
+#[derive(Debug, Clone)]
+pub struct Target {
+    pub action: ActionId,
+    pub resource: ResourceRef,
+}
+
+impl Target {
+    pub fn new(action: ActionId, resource: ResourceRef) -> Self {
+        Self { action, resource }
+    }
+}
+
+/// Resolves the authorization target from the HTTP request.
 ///
-/// The function keeps the `axum::middleware::from_fn` shape so existing
-/// layering compiles, but it deliberately never calls `next.run`. A missing,
-/// failed or unimplemented authorization path must not become a permissive
-/// fallback.
+/// Implementations must be pure and deterministic. Route/method mapping and
+/// path parsing belong here; the client-supplied tenant header is never used
+/// as identity.
+pub trait AuthorizationTarget: Send + Sync {
+    fn resolve(&self, request: &Request<Body>) -> Result<Target, TargetError>;
+}
+
+/// The request cannot be mapped to an authorization target.
+#[derive(Debug, Clone, PartialEq, Eq, Error)]
+#[error("bad authorization target")]
+pub struct TargetError;
+
+/// Legacy fail-closed middleware.
 ///
-/// The denial is a generic `403` with the body `forbidden`. The configuration
-/// error is logged once per process, not once per request, so unauthenticated
-/// traffic cannot amplify logs or leak request paths.
-///
-/// # Example
-///
-/// ```rust,ignore
-/// let app = Router::new()
-///     .route("/protected", get(handler))
-///     .layer(middleware::from_fn(authorize_middleware));
-/// // Every request to /protected now receives 403.
-/// ```
+/// This function keeps the `axum::middleware::from_fn` shape but deliberately
+/// never calls `next.run`. Use [`authorize_with_state`] for real enforcement.
 pub async fn authorize_middleware(
     _req: Request<Body>,
     _next: Next,
@@ -63,4 +117,64 @@ pub async fn authorize_middleware(
     });
 
     Ok((StatusCode::FORBIDDEN, "forbidden").into_response())
+}
+
+/// Authorize a request and forward it only on `Permit`.
+///
+/// Attach with `axum::middleware::from_fn_with_state(state, authorize_with_state)`.
+pub async fn authorize_with_state(
+    State(state): State<AuthorizeState>,
+    mut req: Request<Body>,
+    next: Next,
+) -> Response {
+    let token = match bearer_token(&req) {
+        Some(token) => token,
+        None => return unauthorized(),
+    };
+
+    let principal =
+        match verify_principal(state.authenticator.as_ref(), &Credentials::bearer(token)).await {
+            Ok(principal) => principal,
+            Err(_) => return unauthorized(),
+        };
+
+    let target = match state.target.resolve(&req) {
+        Ok(target) => target,
+        Err(_) => return (StatusCode::BAD_REQUEST, "bad request").into_response(),
+    };
+
+    let context = VerifiedContext::from_principal(principal);
+    let request = AuthorizationRequest::new(context.clone(), target.action, target.resource);
+
+    if !state.allow_cross_account && !request.is_same_account() {
+        return (StatusCode::FORBIDDEN, "forbidden").into_response();
+    }
+
+    if !state.authorizer.decide(&request).allows_access() {
+        return (StatusCode::FORBIDDEN, "forbidden").into_response();
+    }
+
+    // Per-request extension: no shared mutable context between requests.
+    req.extensions_mut().insert(context);
+    next.run(req).await
+}
+
+fn bearer_token(req: &Request<Body>) -> Option<String> {
+    let value = req.headers().get(axum::http::header::AUTHORIZATION)?;
+    let value = value.to_str().ok()?;
+    let (scheme, token) = value.split_once(' ')?;
+    let token = token.trim();
+    if !scheme.eq_ignore_ascii_case("Bearer") || token.is_empty() {
+        return None;
+    }
+    Some(token.to_string())
+}
+
+fn unauthorized() -> Response {
+    let mut response = (StatusCode::UNAUTHORIZED, "unauthorized").into_response();
+    response.headers_mut().insert(
+        axum::http::header::WWW_AUTHENTICATE,
+        axum::http::HeaderValue::from_static("Bearer"),
+    );
+    response
 }

@@ -190,9 +190,10 @@ let can_read = check_authorization(
 
 ### With Axum
 
-> **Not available in this release.** `hodei-authz-axum` is fail-closed: its
-> middleware denies every protected request and its extractors are disabled
-> until a verified authorizer is wired. See the
+> `hodei-authz-axum 0.2.0` provides `AuthorizeState` and
+> `authorize_with_state`: verified bearer authentication plus a real
+> `Authorizer`, with same-account enforcement by default. The legacy
+> `authorize_middleware` remains fail-closed. See the
 > [axum crate README](https://github.com/Rubentxu/hodei-authz/blob/main/crates/hodei-authz-axum/README.md).
 
 ## Documentation

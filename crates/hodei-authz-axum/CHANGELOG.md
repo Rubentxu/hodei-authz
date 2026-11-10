@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.2.0 — authorizing middleware
+
+- Added `AuthorizeState`, `AuthorizationTarget`/`Target`, and
+  `authorize_with_state`. The middleware verifies a bearer credential through a
+  `PrincipalAuthenticator`, resolves a route target, evaluates a real
+  `Authorizer`, and forwards only on `Permit`.
+- Missing/invalid credentials return `401`; deny/indeterminate return `403`;
+  malformed targets return `400`; the handler is not executed in these cases.
+- Cross-account targets are denied by default; `AuthorizeState::allow_cross_account`
+  is an explicit opt-in for administrative flows.
+- The verified `VerifiedContext` is a per-request extension; no mutable state is
+  shared between concurrent requests.
+- `401` includes a `WWW-Authenticate: Bearer` challenge.
+- `authorize_middleware` remains the legacy fail-closed layer for compatibility.
+
 ## 0.1.1 — security correction
 
 - `authorize_middleware` no longer forwards protected requests to the handler.

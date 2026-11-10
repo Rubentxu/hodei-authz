@@ -37,7 +37,7 @@ sed -i 's/hodei-authz = { workspace = true }/hodei-authz = "0.1.0"/g' crates/hod
 sed -i 's/hodei-derive = { workspace = true }/hodei-derive = "0.1.0"/g' crates/hodei-authz-sdk/Cargo.toml
 sed -i 's/hodei-authz-postgres = { workspace = true, optional = true }/hodei-authz-postgres = { version = "0.1.0", optional = true }/g' crates/hodei-authz-sdk/Cargo.toml
 sed -i 's/hodei-authz-redis = { workspace = true, optional = true }/hodei-authz-redis = { version = "0.1.0", optional = true }/g' crates/hodei-authz-sdk/Cargo.toml
-sed -i 's/hodei-authz-axum = { workspace = true, optional = true }/hodei-authz-axum = { version = "0.1.0", optional = true }/g' crates/hodei-authz-sdk/Cargo.toml
+sed -i 's/hodei-authz-axum = { workspace = true, optional = true }/hodei-authz-axum = { version = "0.2.0", optional = true }/g' crates/hodei-authz-sdk/Cargo.toml
 
 echo ""
 echo -e "${GREEN}✅ Crates preparados para publicación${NC}"
