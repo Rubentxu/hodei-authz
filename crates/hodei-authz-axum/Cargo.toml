@@ -1,24 +1,21 @@
 [package]
 name = "hodei-authz-axum"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 authors = ["Ruben Dario Cabrera Garcia <rubentxu74@gmail.com>"]
 description = "Axum web framework integration for Hodei authorization"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/Rubentxu/hodei-policies"
+repository = "https://github.com/Rubentxu/hodei-authz"
 documentation = "https://docs.rs/hodei-authz-axum"
-homepage = "https://github.com/Rubentxu/hodei-policies"
+homepage = "https://github.com/Rubentxu/hodei-authz"
 keywords = ["authorization", "axum", "middleware", "web"]
 categories = ["authentication", "web-programming"]
 readme = "README.md"
 
 [dependencies]
-hodei-authz = "0.1.0"
-hodei-hrn = { workspace = true }
 axum = { workspace = true }
-axum-extra = { workspace = true }
-async-trait = { workspace = true }
-serde = { workspace = true }
+tracing = { workspace = true }
 
 [dev-dependencies]
 tokio = { workspace = true }
+tower = { workspace = true }

@@ -5,20 +5,20 @@ edition = "2024"
 authors = ["Ruben Dario Cabrera Garcia <rubentxu74@gmail.com>"]
 description = "Complete Cedar Policy-based authorization SDK with auto-discovery and builder pattern"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/Rubentxu/hodei-policies"
+repository = "https://github.com/Rubentxu/hodei-authz"
 documentation = "https://docs.rs/hodei-authz-sdk"
-homepage = "https://github.com/Rubentxu/hodei-policies"
+homepage = "https://github.com/Rubentxu/hodei-authz"
 keywords = ["authorization", "cedar", "policy", "sdk"]
 categories = ["authentication", "web-programming"]
 readme = "README.md"
 
 [dependencies]
-hodei-hrn = "0.1.0"
-hodei-authz = "0.1.0"
-hodei-derive = "0.1.0"
-hodei-authz-postgres = { version = "0.1.0", optional = true }
-hodei-authz-redis = { version = "0.1.0", optional = true }
-hodei-authz-axum = { version = "0.1.0", optional = true }
+hodei-hrn = { workspace = true }
+hodei-authz = { workspace = true }
+hodei-derive = { workspace = true }
+hodei-authz-postgres = { workspace = true, optional = true }
+hodei-authz-redis = { workspace = true, optional = true }
+hodei-authz-axum = { workspace = true, optional = true }
 
 # Para el builder y schema
 cedar-policy = "4.7"
@@ -28,10 +28,15 @@ thiserror = "2.0"
 tracing = "0.1"
 tokio = { version = "1.48", features = ["full"] }
 inventory = "0.3"
+sqlx = { workspace = true, optional = true }
+
+[dev-dependencies]
+axum = { workspace = true }
+tower = { workspace = true }
 
 [features]
 default = []
-postgres = ["hodei-authz-postgres"]
+postgres = ["dep:sqlx", "hodei-authz-postgres"]
 redis = ["hodei-authz-redis"]
 axum = ["hodei-authz-axum"]
 full = ["postgres", "redis", "axum"]
