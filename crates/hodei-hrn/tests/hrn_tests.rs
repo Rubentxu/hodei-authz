@@ -11,7 +11,7 @@ fn test_hrn_builder_basic() {
         .unwrap()
         .build()
         .unwrap();
-    
+
     assert_eq!(hrn.service, "test-service");
     assert_eq!(hrn.tenant_id, "tenant-1");
     assert_eq!(hrn.resource_type, "user");
@@ -27,7 +27,7 @@ fn test_hrn_to_string() {
         .unwrap()
         .build()
         .unwrap();
-    
+
     let expected = "hrn:hodei:documents-api:global:tenant-a:document/doc-1";
     assert_eq!(hrn.to_string(), expected);
 }
@@ -36,7 +36,7 @@ fn test_hrn_to_string() {
 fn test_hrn_from_string() {
     let hrn_str = "hrn:hodei:users-api:global:tenant-b:user/alice";
     let hrn = hrn_str.parse::<Hrn>().unwrap();
-    
+
     assert_eq!(hrn.service, "users-api");
     assert_eq!(hrn.tenant_id, "tenant-b");
     assert_eq!(hrn.resource_type, "user");
@@ -52,10 +52,10 @@ fn test_hrn_roundtrip() {
         .unwrap()
         .build()
         .unwrap();
-    
+
     let hrn_str = original.to_string();
     let parsed: Hrn = hrn_str.parse().unwrap();
-    
+
     assert_eq!(original, parsed);
 }
 
@@ -68,10 +68,10 @@ fn test_hrn_serialization() {
         .unwrap()
         .build()
         .unwrap();
-    
+
     let json = serde_json::to_string(&hrn).unwrap();
     let deserialized: Hrn = serde_json::from_str(&json).unwrap();
-    
+
     assert_eq!(hrn, deserialized);
 }
 
@@ -84,7 +84,7 @@ fn test_hrn_with_complex_resource_id() {
         .unwrap()
         .build()
         .unwrap();
-    
+
     assert_eq!(hrn.resource_type, "document");
     assert_eq!(hrn.resource_id, "folder/subfolder/file.txt");
 }
@@ -98,7 +98,7 @@ fn test_hrn_equality() {
         .unwrap()
         .build()
         .unwrap();
-    
+
     let hrn2 = Hrn::builder()
         .service("svc")
         .tenant_id("t1")
@@ -106,7 +106,7 @@ fn test_hrn_equality() {
         .unwrap()
         .build()
         .unwrap();
-    
+
     assert_eq!(hrn1, hrn2);
 }
 
@@ -119,7 +119,7 @@ fn test_hrn_clone() {
         .unwrap()
         .build()
         .unwrap();
-    
+
     let cloned = hrn.clone();
     assert_eq!(hrn, cloned);
 }

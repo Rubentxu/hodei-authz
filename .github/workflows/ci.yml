@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  core:
+    name: Core, Axum and published consumer
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Commit under test
+        run: echo "sha=${{ github.sha }} ref=${{ github.ref }}"
+      - name: Format
+        run: cargo fmt --all -- --check
+      - name: Clippy (no PostgreSQL/Redis)
+        run: cargo clippy -p hodei-authz -p hodei-authz-axum --all-targets --no-deps -- -D warnings
+      - name: Core and Axum tests
+        run: cargo test -p hodei-authz -p hodei-authz-axum
+      - name: Published consumer (positive and negative)
+        run: cargo run --manifest-path examples/published-consumer/Cargo.toml
+      - name: Package the publishable core
+        run: |
+          cargo package -p hodei-authz --allow-dirty --no-verify
+          cargo package -p hodei-authz-axum --allow-dirty --no-verify
