@@ -442,3 +442,27 @@ fn ambiguous_hrn_fields_are_rejected() {
     hrn.resource_id = "a//b".to_string();
     assert!(HrnCedarMapper::hrn_to_uid(&hrn).is_err());
 }
+
+#[test]
+fn package_dash_and_underscore_are_distinct_cedar_types() {
+    use hodei_authz::hodei_hrn::Hrn;
+
+    let dash = Hrn {
+        partition: "hodei".to_string(),
+        service: "artifacts".to_string(),
+        region: "eu".to_string(),
+        tenant_id: "acme".to_string(),
+        resource_type: "package-version".to_string(),
+        resource_id: "v1".to_string(),
+    };
+    let underscore = Hrn {
+        resource_type: "package_version".to_string(),
+        ..dash.clone()
+    };
+
+    let dash_uid = HrnCedarMapper::hrn_to_uid(&dash).unwrap();
+    let underscore_uid = HrnCedarMapper::hrn_to_uid(&underscore).unwrap();
+    assert_ne!(dash_uid.to_string(), underscore_uid.to_string());
+    assert!(dash_uid.to_string().contains("Package_x2Dversion"));
+    assert!(underscore_uid.to_string().contains("Package_x5Fversion"));
+}
