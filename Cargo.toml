@@ -20,7 +20,7 @@ repository = "https://github.com/Rubentxu/hodei-authz"
 # Internal crates
 [workspace.dependencies]
 hodei-hrn = { version = "0.1.0", path = "crates/hodei-hrn" }
-hodei-authz = { version = "0.1.0", path = "crates/hodei-authz" }
+hodei-authz = { version = "0.1.1", path = "crates/hodei-authz" }
 hodei-derive = { version = "0.1.0", path = "crates/hodei-derive" }
 hodei-authz-postgres = { version = "0.1.0", path = "crates/hodei-authz-postgres" }
 hodei-authz-redis = { version = "0.1.0", path = "crates/hodei-authz-redis" }

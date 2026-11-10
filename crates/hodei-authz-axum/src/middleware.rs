@@ -75,6 +75,7 @@ impl AuthorizeState {
 }
 
 /// The action and resource of a request.
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 pub struct Target {
     pub action: ActionId,
@@ -97,9 +98,16 @@ pub trait AuthorizationTarget: Send + Sync {
 }
 
 /// The request cannot be mapped to an authorization target.
+#[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
-#[error("bad authorization target")]
-pub struct TargetError;
+pub enum TargetError {
+    #[error("bad authorization target")]
+    BadRequest,
+    #[error("unsupported method for this route")]
+    UnsupportedMethod,
+    #[error("internal target resolver error")]
+    Internal,
+}
 
 /// Legacy fail-closed middleware.
 ///
@@ -140,7 +148,15 @@ pub async fn authorize_with_state(
 
     let target = match state.target.resolve(&req) {
         Ok(target) => target,
-        Err(_) => return (StatusCode::BAD_REQUEST, "bad request").into_response(),
+        Err(TargetError::BadRequest) => {
+            return (StatusCode::BAD_REQUEST, "bad request").into_response();
+        }
+        Err(TargetError::UnsupportedMethod) => {
+            return (StatusCode::METHOD_NOT_ALLOWED, "method not allowed").into_response();
+        }
+        Err(TargetError::Internal) => {
+            return (StatusCode::INTERNAL_SERVER_ERROR, "internal error").into_response();
+        }
     };
 
     let context = VerifiedContext::from_principal(principal);

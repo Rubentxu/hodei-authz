@@ -2,6 +2,9 @@
 
 ## 0.2.0 — authorizing middleware
 
+- Requires `hodei-authz 0.1.1` (the typed contract/Cedar API); `0.1.0` does not
+  contain those symbols.
+
 - Added `AuthorizeState`, `AuthorizationTarget`/`Target`, and
   `authorize_with_state`. The middleware verifies a bearer credential through a
   `PrincipalAuthenticator`, resolves a route target, evaluates a real

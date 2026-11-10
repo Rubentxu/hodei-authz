@@ -42,7 +42,9 @@ async fn handler(Extension(context): Extension<VerifiedContext>) -> String {
 
 `AuthorizationTarget` maps the HTTP request to an `ActionId` and a `ResourceRef`.
 It must be pure/deterministic and must not derive identity from headers. The
-resolver can use the method, path and verified route parameters.
+resolver can use the method and path. In production prefer an Axum `MatchedPath`/typed
+path resolver; the test resolver parses the raw path and is not a production
+template for percent-encoded or ambiguous routes.
 
 The default is **same-account only**: after authentication, a resource whose
 account differs from the verified principal is denied before the authorizer.

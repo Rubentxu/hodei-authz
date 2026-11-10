@@ -23,17 +23,17 @@ sed -i 's/hodei-hrn = { workspace = true }/hodei-hrn = "0.1.0"/g' crates/hodei-a
 sed -i 's/hodei-derive = { workspace = true }/hodei-derive = "0.1.0"/g' crates/hodei-authz/Cargo.toml
 
 # hodei-authz-postgres
-sed -i 's/hodei-authz = { workspace = true }/hodei-authz = "0.1.0"/g' crates/hodei-authz-postgres/Cargo.toml
+sed -i 's/hodei-authz = { workspace = true }/hodei-authz = "0.1.1"/g' crates/hodei-authz-postgres/Cargo.toml
 
 # hodei-authz-redis
-sed -i 's/hodei-authz = { workspace = true }/hodei-authz = "0.1.0"/g' crates/hodei-authz-redis/Cargo.toml
+sed -i 's/hodei-authz = { workspace = true }/hodei-authz = "0.1.1"/g' crates/hodei-authz-redis/Cargo.toml
 
 # hodei-authz-axum
-sed -i 's/hodei-authz = { workspace = true }/hodei-authz = "0.1.0"/g' crates/hodei-authz-axum/Cargo.toml
+sed -i 's/hodei-authz = { workspace = true }/hodei-authz = "0.1.1"/g' crates/hodei-authz-axum/Cargo.toml
 
 # hodei-authz-sdk
 sed -i 's/hodei-hrn = { workspace = true }/hodei-hrn = "0.1.0"/g' crates/hodei-authz-sdk/Cargo.toml
-sed -i 's/hodei-authz = { workspace = true }/hodei-authz = "0.1.0"/g' crates/hodei-authz-sdk/Cargo.toml
+sed -i 's/hodei-authz = { workspace = true }/hodei-authz = "0.1.1"/g' crates/hodei-authz-sdk/Cargo.toml
 sed -i 's/hodei-derive = { workspace = true }/hodei-derive = "0.1.0"/g' crates/hodei-authz-sdk/Cargo.toml
 sed -i 's/hodei-authz-postgres = { workspace = true, optional = true }/hodei-authz-postgres = { version = "0.1.0", optional = true }/g' crates/hodei-authz-sdk/Cargo.toml
 sed -i 's/hodei-authz-redis = { workspace = true, optional = true }/hodei-authz-redis = { version = "0.1.0", optional = true }/g' crates/hodei-authz-sdk/Cargo.toml
