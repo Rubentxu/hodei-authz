@@ -2,7 +2,7 @@
 
 Core traits and logic for the Hodei authorization framework.
 
-> El contrato tipado de autorización (principal verificado, outcomes y puertos) está en [AUTHORIZATION.md](AUTHORIZATION.md).
+> El contrato tipado de autorización (principal verificado, outcomes y puertos) está en [AUTHORIZATION.md](AUTHORIZATION.md). La evaluación Cedar pura está en [CEDAR.md](CEDAR.md).
 
 ## Overview
 
