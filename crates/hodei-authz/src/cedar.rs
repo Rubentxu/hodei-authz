@@ -117,7 +117,7 @@ impl CedarAuthorizer {
         // declared by the schema (including action groups). Without this, an
         // `action in Action::"group"` forbid would silently not match.
         let entities = Entities::from_entities(entities.iter().cloned(), Some(&schema))
-            .map_err(|error| CedarSetupError::Entities(error.to_string()))?;
+            .map_err(|error| CedarSetupError::Entities(format!("{error:?}")))?;
 
         Ok(Self {
             policy_set,
@@ -196,7 +196,7 @@ impl CedarAuthorizer {
             .remove_entities([principal_uid.clone(), resource_uid.clone()])
             .map_err(|error| error.to_string())?
             .add_entities([principal_entity, resource_entity], self.schema.as_ref())
-            .map_err(|error| error.to_string())?;
+            .map_err(|error| format!("{error:?}"))?;
 
         let context = cedar_context(request.context_attributes(), self.mapper.as_ref())?;
         let cedar_request = Request::new(

@@ -7,6 +7,7 @@
 pub mod api;
 pub mod cedar;
 pub mod decision;
+pub mod hrn_mapper;
 pub mod model;
 pub mod ports;
 pub mod traits;
@@ -20,6 +21,7 @@ pub use api::{
 };
 pub use cedar::{CedarAuthorizer, CedarEntityMapper, CedarMappingError, CedarSetupError};
 pub use decision::{AuthorizationOutcome, DenyReason, IndeterminateReason};
+pub use hrn_mapper::HrnCedarMapper;
 pub use model::{
     AccountId, ActionId, AttributeValue, Attributes, AuthorizationRequest, Credentials, GroupId,
     ModelError, PrincipalClaims, PrincipalId, ResourceRef, VerifiedContext, VerifiedPrincipal,
