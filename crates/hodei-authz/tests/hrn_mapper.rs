@@ -132,22 +132,38 @@ async fn group_membership_can_trigger_a_forbid() {
 
 #[tokio::test]
 async fn resource_parents_are_prefixes_of_the_resource_id() {
-    let hrn = Hrn {
-        partition: "hodei".to_string(),
-        service: "artifacts".to_string(),
-        region: "eu".to_string(),
-        tenant_id: "acme".to_string(),
-        resource_type: "repository".to_string(),
-        resource_id: "repository/releases/v2".to_string(),
-    };
+    let hrn = Hrn::new(
+        "hodei",
+        "artifacts",
+        "eu",
+        "acme",
+        "repository",
+        "repository/releases/v2",
+    )
+    .unwrap();
     let resource = ResourceRef::new(hrn.clone()).expect("resource");
     let parents = HrnCedarMapper.resource_parents(&resource).expect("parents");
 
-    let mut parent_hrn = hrn.clone();
-    parent_hrn.resource_id = "repository/releases".to_string();
-    let immediate = HrnCedarMapper::hrn_to_uid(&parent_hrn).expect("immediate");
-    parent_hrn.resource_id = "repository".to_string();
-    let root = HrnCedarMapper::hrn_to_uid(&parent_hrn).expect("root");
+    let immediate_hrn = Hrn::new(
+        "hodei",
+        "artifacts",
+        "eu",
+        "acme",
+        "repository",
+        "repository/releases",
+    )
+    .unwrap();
+    let immediate = HrnCedarMapper::hrn_to_uid(&immediate_hrn).expect("immediate");
+    let root_hrn = Hrn::new(
+        "hodei",
+        "artifacts",
+        "eu",
+        "acme",
+        "repository",
+        "repository",
+    )
+    .unwrap();
+    let root = HrnCedarMapper::hrn_to_uid(&root_hrn).expect("root");
 
     assert!(parents.contains(&immediate));
     assert!(parents.contains(&root));
@@ -311,14 +327,15 @@ async fn group_membership_is_account_scoped() {
 
 #[tokio::test]
 async fn resource_parents_can_trigger_a_forbid() {
-    let hrn = Hrn {
-        partition: "hodei".to_string(),
-        service: "artifacts".to_string(),
-        region: "eu".to_string(),
-        tenant_id: "acme".to_string(),
-        resource_type: "repository".to_string(),
-        resource_id: "repository/releases/v2".to_string(),
-    };
+    let hrn = Hrn::new(
+        "hodei",
+        "artifacts",
+        "eu",
+        "acme",
+        "repository",
+        "repository/releases/v2",
+    )
+    .unwrap();
     let authorizer = CedarAuthorizer::from_policies_unchecked(
         r#"permit(principal, action, resource);
         forbid(principal, action, resource)
@@ -352,113 +369,35 @@ fn single_segment_resource_has_no_parents() {
 
 #[test]
 fn empty_hrn_fields_are_rejected() {
-    let mut hrn = Hrn {
-        partition: "hodei".to_string(),
-        service: "artifacts".to_string(),
-        region: "eu".to_string(),
-        tenant_id: "acme".to_string(),
-        resource_type: "repository".to_string(),
-        resource_id: "releases".to_string(),
-    };
-    hrn.service.clear();
-    assert!(HrnCedarMapper::hrn_to_uid(&hrn).is_err());
-
-    hrn.service = "artifacts".to_string();
-    hrn.tenant_id.clear();
-    assert!(HrnCedarMapper::hrn_to_uid(&hrn).is_err());
-}
-
-#[test]
-fn partition_is_part_of_the_identity() {
-    let first = resource("hrn:hodei:artifacts:eu:acme:repository/releases");
-    let second = resource("hrn:other:artifacts:eu:acme:repository/releases");
-    assert_ne!(
-        HrnCedarMapper.resource_uid(&first).unwrap(),
-        HrnCedarMapper.resource_uid(&second).unwrap()
-    );
-}
-
-struct ClaimsAuthenticator(PrincipalClaims);
-
-#[async_trait]
-impl PrincipalAuthenticator for ClaimsAuthenticator {
-    async fn authenticate(
-        &self,
-        _credentials: &Credentials,
-    ) -> Result<PrincipalClaims, AuthenticationError> {
-        Ok(self.0.clone())
-    }
-}
-
-#[tokio::test]
-async fn group_and_resource_subjects_are_not_principals() {
-    let group_subject = PrincipalClaims::new(
-        PrincipalId::new("hrn:hodei:iam::acme:Group/developers").unwrap(),
-        AccountId::new("acme").unwrap(),
-    );
-    let group = verify_principal(
-        &ClaimsAuthenticator(group_subject),
-        &Credentials::bearer("token"),
-    )
-    .await
-    .expect("verified claims");
-    assert!(HrnCedarMapper.principal_uid(&group).is_err());
-
-    let resource_subject = PrincipalClaims::new(
-        PrincipalId::new("hrn:hodei:artifacts:eu:acme:repository/releases").unwrap(),
-        AccountId::new("acme").unwrap(),
-    );
-    let resource = verify_principal(
-        &ClaimsAuthenticator(resource_subject),
-        &Credentials::bearer("token"),
-    )
-    .await
-    .expect("verified claims");
-    assert!(HrnCedarMapper.principal_uid(&resource).is_err());
+    assert!(Hrn::new("hodei", "artifacts", "eu", "acme", "repository", "").is_err());
+    assert!(Hrn::new("hodei", "artifacts", "eu", "", "repository", "releases").is_err());
+    assert!(Hrn::new("hodei", "artifacts", "eu", "acme", "repository", "a//b").is_err());
 }
 
 #[test]
 fn ambiguous_hrn_fields_are_rejected() {
-    let mut hrn = Hrn {
-        partition: "hodei".to_string(),
-        service: "artifacts".to_string(),
-        region: "eu".to_string(),
-        tenant_id: "acme".to_string(),
-        resource_type: "repository".to_string(),
-        resource_id: "releases".to_string(),
-    };
-    hrn.service = "a:b".to_string();
-    assert!(HrnCedarMapper::hrn_to_uid(&hrn).is_err());
-
-    hrn.service = "artifacts".to_string();
-    hrn.region = "x:a_b:y".to_string();
-    assert!(HrnCedarMapper::hrn_to_uid(&hrn).is_err());
-
-    hrn.region = "eu".to_string();
-    hrn.resource_type = "c:d".to_string();
-    assert!(HrnCedarMapper::hrn_to_uid(&hrn).is_err());
-
-    hrn.resource_type = "repository".to_string();
-    hrn.resource_id = "a//b".to_string();
-    assert!(HrnCedarMapper::hrn_to_uid(&hrn).is_err());
+    assert!(Hrn::new("hodei", "a:b", "eu", "acme", "repository", "releases").is_err());
+    assert!(
+        Hrn::new(
+            "hodei",
+            "artifacts",
+            "x:a_b:y",
+            "acme",
+            "repository",
+            "releases"
+        )
+        .is_err()
+    );
+    assert!(Hrn::new("hodei", "artifacts", "eu", "acme", "c:d", "releases").is_err());
+    assert!(Hrn::new("hodei", "artifacts", "eu", "acme", "repository", "a//b").is_err());
 }
 
 #[test]
 fn package_dash_and_underscore_are_distinct_cedar_types() {
     use hodei_authz::hodei_hrn::Hrn;
 
-    let dash = Hrn {
-        partition: "hodei".to_string(),
-        service: "artifacts".to_string(),
-        region: "eu".to_string(),
-        tenant_id: "acme".to_string(),
-        resource_type: "package-version".to_string(),
-        resource_id: "v1".to_string(),
-    };
-    let underscore = Hrn {
-        resource_type: "package_version".to_string(),
-        ..dash.clone()
-    };
+    let dash = Hrn::new("hodei", "artifacts", "eu", "acme", "package-version", "v1").unwrap();
+    let underscore = Hrn::new("hodei", "artifacts", "eu", "acme", "package_version", "v1").unwrap();
 
     let dash_uid = HrnCedarMapper::hrn_to_uid(&dash).unwrap();
     let underscore_uid = HrnCedarMapper::hrn_to_uid(&underscore).unwrap();

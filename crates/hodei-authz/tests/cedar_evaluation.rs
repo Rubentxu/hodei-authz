@@ -45,9 +45,9 @@ fn uid(type_name: &str, id: &str) -> EntityUid {
 impl CedarEntityMapper for TestMapper {
     fn entity_reference(&self, value: &str) -> Result<EntityUid, CedarMappingError> {
         if let Ok(hrn) = value.parse::<Hrn>()
-            && hrn.resource_type == "User"
+            && hrn.resource_type() == "User"
         {
-            return Ok(uid("User", &hrn.resource_id));
+            return Ok(uid("User", hrn.resource_path()));
         }
         value
             .parse()

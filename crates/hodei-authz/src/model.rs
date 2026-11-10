@@ -278,9 +278,8 @@ impl VerifiedContext {
 
 /// Resource identity plus the account scope it belongs to.
 ///
-/// The account is derived from the HRN's tenant field, not supplied as an
-/// independent value. The HRN is still the `hodei-hrn` 0.1 type in this
-/// release; HSP-7/HSP-12 replace it with the canonical parser.
+/// The account is derived from the HRN's account field, not supplied as an
+/// independent value. The HRN is the published `hodei-hrn` canonical type.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ResourceRef {
     hrn: Hrn,
@@ -290,19 +289,19 @@ pub struct ResourceRef {
 
 impl ResourceRef {
     pub fn new(hrn: Hrn) -> Result<Self, ModelError> {
-        if hrn.partition.is_empty()
-            || hrn.service.is_empty()
-            || hrn.resource_type.is_empty()
-            || hrn.resource_id.is_empty()
-            || hrn.service != hrn.service.to_ascii_lowercase()
-            || hrn.resource_type.eq_ignore_ascii_case("action")
-            || !valid_hrn_part(&hrn.service)
-            || !valid_hrn_part(&hrn.resource_type)
-            || !valid_hrn_part(&hrn.resource_id)
+        if hrn.partition().is_empty()
+            || hrn.service().is_empty()
+            || hrn.resource_type().is_empty()
+            || hrn.resource_path().is_empty()
+            || hrn.service() != hrn.service().to_ascii_lowercase()
+            || hrn.resource_type().eq_ignore_ascii_case("action")
+            || !valid_hrn_part(hrn.service())
+            || !valid_hrn_part(hrn.resource_type())
+            || !valid_hrn_part(hrn.resource_path())
         {
             return Err(ModelError::InvalidResourceHrn);
         }
-        let account = AccountId::new(hrn.tenant_id.clone())?;
+        let account = AccountId::new(hrn.account().to_string())?;
         Ok(Self {
             hrn,
             account,

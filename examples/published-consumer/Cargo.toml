@@ -8,8 +8,8 @@ publish = false
 [workspace]
 
 [dependencies]
-hodei-authz = "0.1.1"
-hodei-authz-axum = "0.2.0"
+hodei-authz = "0.1.2"
+hodei-authz-axum = "0.2.1"
 cedar-policy = "4.7"
 async-trait = "0.1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }

@@ -7,8 +7,8 @@
 ## Acoplamiento real
 
 - `CedarAuthorizer` vive en `crates/hodei-authz/src/cedar.rs`, pero Cedar **no** está confinado a ese archivo: `api.rs`, `internal/domain.rs`, `traits.rs` (`PolicyStore::load_all_policies -> PolicySet`), `hrn_mapper.rs` y `lib.rs` usan o reexportan tipos `cedar-policy`. `cedar-policy` es una dependencia no opcional de `hodei-authz`.
-- Por tanto hoy **no existe** un subconjunto del contrato que compile sin Cedar. Extraer un crate exigiría mover también el mapper de producción, parte de `api`, el modelo interno y rediseñar `PolicyStore`, con ruptura de la API `0.1.1` ya publicada.
-- `hodei-authz-axum 0.2.0` solo declara `axum`, `hodei-authz`, `thiserror` y `tracing` en runtime; consume `Arc<dyn Authorizer>` y `decide()`. Cedar aparece únicamente como `dev-dependency` para sus tests de integración.
+- Por tanto hoy **no existe** un subconjunto del contrato que compile sin Cedar. Extraer un crate exigiría mover también el mapper de producción, parte de `api`, el modelo interno y rediseñar `PolicyStore`, con ruptura de la API `0.1.2` ya publicada.
+- `hodei-authz-axum 0.2.1` solo declara `axum`, `hodei-authz`, `thiserror` y `tracing` en runtime; consume `Arc<dyn Authorizer>` y `decide()`. Cedar aparece únicamente como `dev-dependency` para sus tests de integración.
 
 ## Alternativa evaluada
 
@@ -17,8 +17,8 @@ Se consideró hacer `cedar` opcional mediante una feature en el mismo crate. Tam
 ## Verificación publicada
 
 - Fecha de publicación: 2026-11-10.
-- [`hodei-authz 0.1.1`](https://crates.io/crates/hodei-authz/0.1.1) y [`hodei-authz-axum 0.2.0`](https://crates.io/crates/hodei-authz-axum/0.2.0) están en crates.io. Los adaptadores `hodei-authz-postgres`, `hodei-authz-redis` y `hodei-authz-sdk 0.1.0` ya estaban publicados.
-- Consumidor reproducible en el repo: `examples/published-consumer`, aislado del workspace, con dependencias `hodei-authz = "0.1.1"`, `hodei-authz-axum = "0.2.0"` y sin paths:
+- [`hodei-authz 0.1.2`](https://crates.io/crates/hodei-authz/0.1.2) y [`hodei-authz-axum 0.2.1`](https://crates.io/crates/hodei-authz-axum/0.2.1) están en crates.io. Los adaptadores `hodei-authz-postgres`, `hodei-authz-redis` y `hodei-authz-sdk 0.1.0` ya estaban publicados.
+- Consumidor reproducible en el repo: `examples/published-consumer`, aislado del workspace, con dependencias `hodei-authz = "0.1.2"`, `hodei-authz-axum = "0.2.1"` y sin paths:
 
   ```text
   cargo run --manifest-path examples/published-consumer/Cargo.toml
