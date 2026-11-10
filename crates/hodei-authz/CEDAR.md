@@ -41,7 +41,7 @@ match authorizer.decide(&request) {
 
 ## Entidades y contexto
 
-`CedarEntityMapper` es el seam HSP-7 y forma parte de la TCB: decide los UIDs y parents de `VerifiedPrincipal` y `ResourceRef`, y traduce referencias `AttributeValue::Entity` (por ejemplo el HRN de `owner_id`) a un UID Cedar. El evaluador no inventa tipos ni UIDs a partir de strings no verificados. Las implementaciones **deben ser puras y deterministas**: no IO, reloj ni aleatoriedad.
+`HrnCedarMapper` (ver [HRN_MAPPING.md](HRN_MAPPING.md)) es el mapper de producción; `CedarEntityMapper` es el seam y forma parte de la TCB: decide los UIDs y parents de `VerifiedPrincipal` y `ResourceRef`, y traduce referencias `AttributeValue::Entity` (por ejemplo el HRN de `owner_id`) a un UID Cedar. El evaluador no inventa tipos ni UIDs a partir de strings no verificados. Las implementaciones **deben ser puras y deterministas**: no IO, reloj ni aleatoriedad.
 
 El evaluador construye las entidades del principal y del recurso en cada decisión, inyectando los atributos del request (`String`, `Bool`, `Long`, `Entity`, `Set<String>`) como atributos Cedar. Así `principal.role` y `resource.owner_id` son evaluables con el payload tipado. Si el snapshot base ya contiene una entidad con el mismo UID, se **fusiona**: se conservan sus parents y atributos y el request solo sobrescribe los atributos con el mismo nombre. Los parents que devuelve el mapper se añaden a los de la entidad base.
 

@@ -15,7 +15,7 @@ Núcleo funcional de `hodei-authz`: separa identidad verificada de datos aportad
 
 No existe constructor público de `VerifiedPrincipal`, `From<PrincipalClaims>`, `From<HeaderMap>` ni deserialización de `VerifiedPrincipal`. Los doctests `compile_fail` E0451/E0308/E0277 de `model.rs` fijan la privacidad de campos, el rechazo de claims como contexto y la ausencia de serde.
 
-**El authenticator y el `CedarEntityMapper` son parte de la TCB.** Un adaptador que ignore las credenciales y copie `x-tenant-id` anula la garantía; el trait hace explícita esa decisión, no la valida criptográficamente. El mapper debe codificar el tenant en los UIDs. Las implementaciones de test (`MockAuthenticator`, `TestMapper`) solo existen para probar el contrato.
+**El authenticator y el `CedarEntityMapper` son parte de la TCB.** Un adaptador que ignore las credenciales y copie `x-tenant-id` anula la garantía; el trait hace explícita esa decisión, no la valida criptográficamente. El mapper debe codificar el tenant en los UIDs; `HrnCedarMapper` usa el HRN completo (ver [HRN_MAPPING.md](HRN_MAPPING.md)). Las implementaciones de test (`MockAuthenticator`, `TestMapper`) solo existen para probar el contrato.
 
 ## Uso
 
