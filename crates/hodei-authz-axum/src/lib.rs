@@ -2,13 +2,20 @@
 //!
 //! # Security
 //!
-//! [`authorize_middleware`] is **fail-closed**: it denies every request until a
-//! verified authorizer is wired, and it never forwards a protected request.
-//! See the [`middleware`] module for the rationale and the migration path.
+//! [`authorize_with_state`] verifies a bearer credential through a
+//! [`hodei_authz::PrincipalAuthenticator`], builds an
+//! [`hodei_authz::AuthorizationRequest`] from a route target, and forwards the
+//! request only when the [`hodei_authz::Authorizer`] returns `Permit`.
+//! Missing/invalid credentials are `401`; deny/indeterminate are `403`; the
+//! handler is never executed in those cases.
 //!
-//! The authenticated extractors are not enabled in this release. Do not build
-//! a security identity from unverified headers or client-supplied tenant IDs.
+//! [`authorize_middleware`] remains the legacy fail-closed layer for routers
+//! that have not migrated. Do not build a security identity from unverified
+//! headers or client-supplied tenant IDs.
 
 pub mod middleware;
 
-pub use middleware::authorize_middleware;
+pub use middleware::{
+    AuthorizationTarget, AuthorizeState, Target, TargetError, authorize_middleware,
+    authorize_with_state,
+};

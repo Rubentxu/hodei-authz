@@ -2,12 +2,13 @@
 
 Motor de autorización avanzado construido en Rust con Cedar Policy, diseñado para aplicaciones multi-tenant seguras y escalables.
 
-> **Aviso de seguridad (2026-11-10).** El middleware Axum de este repositorio es
-> fail-closed: deniega con `403` hasta que exista un authorizer verificado
-> (`hodei-authz-axum 0.1.1`). La versión publicada `0.1.0` no protege. Los
-> ejemplos con `Authorization: Bearer`, la tabla de usuarios y los scripts de
-> API describen el objetivo o código legacy, no un flujo de autorización ya
-> cableado.
+> **Aviso de seguridad (2026-11-10).** `hodei-authz-axum 0.2.0` incluye
+> `authorize_with_state`: verifica el bearer con un `PrincipalAuthenticator`,
+> autoriza con un `Authorizer` real y solo entonces ejecuta el handler. El
+> `authorize_middleware` antiguo sigue fail-closed (`403`) por compatibilidad.
+> La versión publicada `0.1.0` no protegía; los ejemplos con `Authorization:
+> Bearer`, la tabla de usuarios y los scripts de API describen el objetivo o
+> código legacy, no un flujo ya cableado en esos ejemplos.
 
 
 ## 🎯 Características Principales
